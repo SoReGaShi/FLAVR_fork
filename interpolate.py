@@ -20,6 +20,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--input_video" , type=str , required=True , help="Path/WebURL to input video")
+parser.add_argument("--output_path", type=str, help="Path for the output video", default="output.mp4")  # 出力先追加
 parser.add_argument("--youtube-dl" , type=str , help="Path to youtube_dl" , default=".local/bin/youtube-dl")
 parser.add_argument("--factor" , type=int , required=True , choices=[2,4,8] , help="How much interpolation needed. 2x/4x/8x.")
 parser.add_argument("--codec" , type=str , help="video codec" , default="mpeg4")
@@ -155,6 +156,21 @@ for i in tqdm.tqdm(range(len(idxs))):
 new_video = [make_image(im_) for im_ in outputs]
 
 write_video_cv2(new_video , output_video , args.output_fps , (resizes[1] , resizes[0]))
+
+
+
+# 中間のAVIファイルのパスを作成
+temp_output = args.output_video.replace(".mp4", ".avi")  # 出力パスからAVIの一時ファイルを作成
+
+# AVIフォーマットで書き出す
+write_video_cv2(new_video, temp_output, args.output_fps, (resizes[1], resizes[0]))
+
+# 最終的なMP4出力
+print("Writing to", args.output_video)
+os.system(f'ffmpeg -hide_banner -loglevel warning -i "{temp_output}" "{args.output_video}"')
+
+
+
 
 print("Writing to " , output_video.split(".")[0] + ".mp4")
 os.system('ffmpeg -hide_banner -loglevel warning -i %s %s'%(output_video , output_video.split(".")[0] + ".mp4"))
