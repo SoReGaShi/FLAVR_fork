@@ -107,7 +107,7 @@ def files_to_videoTensor(path , downscale=1.):
 
 def video_to_tensor(video):
 
-    videoTensor , _ , md = read_video(video)
+    videoTensor, _, md = read_video(video, pts_unit='sec')
     fps = md["video_fps"]
     print(fps)
     return videoTensor
