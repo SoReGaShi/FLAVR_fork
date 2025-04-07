@@ -155,23 +155,23 @@ for i in tqdm.tqdm(range(len(idxs))):
 
 new_video = [make_image(im_) for im_ in outputs]
 
-write_video_cv2(new_video , output_video , args.output_fps , (resizes[1] , resizes[0]))
-
-
 
 # 中間のAVIファイルのパスを作成
-temp_output = args.output_video.replace(".mp4", ".avi")  # 出力パスからAVIの一時ファイルを作成
+temp_output = args.output_video_path.replace(".mp4", ".avi")  # 出力パスからAVIの一時ファイルを作成
 
 # AVIフォーマットで書き出す
 write_video_cv2(new_video, temp_output, args.output_fps, (resizes[1], resizes[0]))
 
 # 最終的なMP4出力
-print("Writing to", args.output_video)
-os.system(f'ffmpeg -hide_banner -loglevel warning -i "{temp_output}" "{args.output_video}"')
+print("Writing to", args.output_video_path)
+os.system(f'ffmpeg -hide_banner -loglevel warning -i "{temp_output}" "{args.output_video_path}"')
+
+# 一時的なAVIファイルを削除
+os.remove(temp_output)
 
 
+# write_video_cv2(new_video , output_video , args.output_fps , (resizes[1] , resizes[0]))
 
-
-print("Writing to " , output_video.split(".")[0] + ".mp4")
-os.system('ffmpeg -hide_banner -loglevel warning -i %s %s'%(output_video , output_video.split(".")[0] + ".mp4"))
-os.remove(output_video)
+# print("Writing to " , output_video.split(".")[0] + ".mp4")
+# os.system('ffmpeg -hide_banner -loglevel warning -i %s %s'%(output_video , output_video.split(".")[0] + ".mp4"))
+# os.remove(output_video)
