@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flavr_fork"
+version = "0.1.0"
+description = "Fork of FLAVR implementation"
+authors = [
+    { name = "Your Name", email = "your.email@example.com" }
+]
+dependencies = []  # 依存パッケージ（必要に応じて変更）
+requires-python = ">=3.9"
+license = { text = "MIT" }
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"seesr_fork" = ["**/*.*"]  # すべてのファイルタイプを含める（これがないと、.jsonや.txtなどを含むディレクトリがインストールされない）
+
+[tool.setuptools]
+include-package-data = true
+
+[project.optional-dependencies]
+dev = []
