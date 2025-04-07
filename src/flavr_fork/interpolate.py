@@ -155,7 +155,6 @@ for i in tqdm.tqdm(range(len(idxs))):
 
 new_video = [make_image(im_) for im_ in outputs]
 
-
 # 中間のAVIファイルのパスを作成
 temp_output = args.output_video_path.replace(".mp4", ".avi")  # 出力パスからAVIの一時ファイルを作成
 
@@ -168,10 +167,3 @@ os.system(f'ffmpeg -hide_banner -loglevel warning -i "{temp_output}" "{args.outp
 
 # 一時的なAVIファイルを削除
 os.remove(temp_output)
-
-
-# write_video_cv2(new_video , output_video , args.output_fps , (resizes[1] , resizes[0]))
-
-# print("Writing to " , output_video.split(".")[0] + ".mp4")
-# os.system('ffmpeg -hide_banner -loglevel warning -i %s %s'%(output_video , output_video.split(".")[0] + ".mp4"))
-# os.remove(output_video)
