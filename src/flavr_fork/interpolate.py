@@ -112,8 +112,7 @@ def video_to_tensor(video):
     fps = md["video_fps"]
     print(fps)
     return videoTensor
-
-"""
+    
 def video_transform(videoTensor , downscale=1):
     
     T , H , W = videoTensor.size(0), videoTensor.size(1) , videoTensor.size(2)
@@ -124,20 +123,6 @@ def video_transform(videoTensor , downscale=1):
     
     # resizes = 720,1280
     print("Resizing to %dx%d"%(resizes[0] , resizes[1]) )
-    return videoTensor , resizes
-"""
-
-def video_transform(videoTensor , downscale=1):
-
-    from dataset.transforms import ToTensorVideo  # 忘れずインポート
-
-    transforms = torchvision.transforms.Compose([ToTensorVideo()])
-    videoTensor = transforms(videoTensor)
-
-    # 解像度を取得（変えない）
-    resizes = videoTensor.shape[-2], videoTensor.shape[-1]
-
-    print("Using original resolution: %dx%d"%(resizes[0], resizes[1]))
     return videoTensor , resizes
 
 
