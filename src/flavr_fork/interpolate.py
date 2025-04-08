@@ -112,7 +112,92 @@ def video_to_tensor(video):
     fps = md["video_fps"]
     print(fps)
     return videoTensor
+
+# video_transform関数はそのまま使用（モデルは8の倍数の解像度を必要とするため）
+def video_transform(videoTensor, downscale=1):
+    T, H, W = videoTensor.size(0), videoTensor.size(1), videoTensor.size(2)
+    downscale = int(downscale * 8)
+    resizes = 8*(H//downscale), 8*(W//downscale)
+    transforms = torchvision.transforms.Compose([ToTensorVideo(), Resize(resizes)])
+    videoTensor = transforms(videoTensor)
+    print(f"Resizing to {resizes[0]}x{resizes[1]} for processing")
+    return videoTensor, resizes
+
+
+# 元の動画の解像度を保存する部分（メイン処理の前に追加）
+if args.is_folder:
+    first_image = os.path.join(input_video, sorted(os.listdir(input_video))[0])
+    original_image = Image.open(os.path.join(input_video, first_image))
+    original_width, original_height = original_image.size
+else:
+    video_capture = cv2.VideoCapture(input_video)
+    ret, frame = video_capture.read()
+    original_height, original_width = frame.shape[:2]
+    video_capture.release()
+
+print(f"Original resolution: {original_width}x{original_height}")
+
+# メイン処理（変更なし）
+if args.is_folder:
+    videoTensor = files_to_videoTensor(input_video, args.downscale)
+else:
+    videoTensor = video_to_tensor(input_video)
+
+idxs = torch.Tensor(range(len(videoTensor))).type(torch.long).view(1,-1).unfold(1,size=nbr_frame,step=1).squeeze(0)
+videoTensor, resizes = video_transform(videoTensor, args.downscale)
+print("Video tensor shape is,", videoTensor.shape)
+
+frames = torch.unbind(videoTensor, 1)
+n_inputs = len(frames)
+width = n_outputs + 1
+
+outputs = []  # store the input and interpolated frames
+outputs.append(frames[idxs[0][1]])
+
+model = model.eval()
+
+for i in tqdm.tqdm(range(len(idxs))):
+    idxSet = idxs[i]
+    inputs = [frames[idx_].cuda().unsqueeze(0) for idx_ in idxSet]
+    with torch.no_grad():
+        outputFrame = model(inputs)   
+    outputFrame = [of.squeeze(0).cpu().data for of in outputFrame]
+    outputs.extend(outputFrame)
+    outputs.append(inputs[2].squeeze(0).cpu().data)
+
+new_video = [make_image(im_) for im_ in outputs]
+
+# 元の解像度にリサイズする処理を追加
+print(f"Resizing output frames back to original resolution: {original_width}x{original_height}")
+resized_video = []
+for frame in new_video:
+    # 現在のサイズを取得
+    current_h, current_w = frame.shape[:2]
     
+    # リサイズが必要かチェック
+    if current_h != original_height or current_w != original_width:
+        resized_frame = cv2.resize(frame, (original_width, original_height), 
+                                   interpolation=cv2.INTER_LANCZOS4)
+        resized_video.append(resized_frame)
+    else:
+        resized_video.append(frame)
+
+# 中間のAVIファイルのパスを作成
+temp_output = args.output_video_path.replace(".mp4", ".avi")
+
+# リサイズされたフレームでAVIフォーマットで書き出す
+print(f"Writing temporary AVI file with original resolution: {original_width}x{original_height}")
+write_video_cv2(resized_video, temp_output, args.output_fps, (original_width, original_height))
+
+# 最終的なMP4出力
+print("Converting to MP4:", args.output_video_path)
+os.system(f'ffmpeg -hide_banner -loglevel warning -i "{temp_output}" "{args.output_video_path}"')
+
+# 一時的なAVIファイルを削除
+os.remove(temp_output)
+
+
+"""
 def video_transform(videoTensor , downscale=1):
     
     T , H , W = videoTensor.size(0), videoTensor.size(1) , videoTensor.size(2)
@@ -168,3 +253,4 @@ os.system(f'ffmpeg -hide_banner -loglevel warning -i "{temp_output}" "{args.outp
 
 # 一時的なAVIファイルを削除
 os.remove(temp_output)
+"""
