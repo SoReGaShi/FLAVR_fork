@@ -113,7 +113,8 @@ def video_to_tensor(video):
     print(fps)
     return videoTensor
 
-# video_transform関数はそのまま使用（モデルは8の倍数の解像度を必要とするため）
+# フレーム補間を行うモデルが8の倍数の解像度を要求するっぽい
+# → 幅と高さが８の倍数となるようにリサイズする
 def video_transform(videoTensor, downscale=1):
     T, H, W = videoTensor.size(0), videoTensor.size(1), videoTensor.size(2)
     downscale = int(downscale * 8)
@@ -124,7 +125,7 @@ def video_transform(videoTensor, downscale=1):
     return videoTensor, resizes
 
 
-# 元の動画の解像度を保存する部分（メイン処理の前に追加）
+# 元の動画の解像度を保存する部分（あとで元の解像度に戻せるようにするため）
 if args.is_folder:
     first_image = os.path.join(input_video, sorted(os.listdir(input_video))[0])
     original_image = Image.open(os.path.join(input_video, first_image))
@@ -137,7 +138,6 @@ else:
 
 print(f"Original resolution: {original_width}x{original_height}")
 
-# メイン処理（変更なし）
 if args.is_folder:
     videoTensor = files_to_videoTensor(input_video, args.downscale)
 else:
@@ -167,7 +167,7 @@ for i in tqdm.tqdm(range(len(idxs))):
 
 new_video = [make_image(im_) for im_ in outputs]
 
-# 元の解像度にリサイズする処理を追加
+# 元の解像度にリサイズする処理
 print(f"Resizing output frames back to original resolution: {original_width}x{original_height}")
 resized_video = []
 for frame in new_video:
@@ -195,62 +195,3 @@ os.system(f'ffmpeg -hide_banner -loglevel warning -i "{temp_output}" "{args.outp
 
 # 一時的なAVIファイルを削除
 os.remove(temp_output)
-
-
-"""
-def video_transform(videoTensor , downscale=1):
-    
-    T , H , W = videoTensor.size(0), videoTensor.size(1) , videoTensor.size(2)
-    downscale = int(downscale * 8)
-    resizes = 8*(H//downscale) , 8*(W//downscale)
-    transforms = torchvision.transforms.Compose([ToTensorVideo() , Resize(resizes)])
-    videoTensor = transforms(videoTensor)
-    
-    # resizes = 720,1280
-    print("Resizing to %dx%d"%(resizes[0] , resizes[1]) )
-    return videoTensor , resizes
-
-
-if args.is_folder:
-    videoTensor = files_to_videoTensor(input_video , args.downscale)
-else:
-    videoTensor = video_to_tensor(input_video)
-
-idxs = torch.Tensor(range(len(videoTensor))).type(torch.long).view(1,-1).unfold(1,size=nbr_frame,step=1).squeeze(0)
-videoTensor , resizes = video_transform(videoTensor , args.downscale)
-print("Video tensor shape is , " , videoTensor.shape)
-
-frames = torch.unbind(videoTensor , 1)
-n_inputs = len(frames)
-width = n_outputs + 1
-
-outputs = [] ## store the input and interpolated frames
-
-outputs.append(frames[idxs[0][1]])
-
-model = model.eval()
-
-for i in tqdm.tqdm(range(len(idxs))):
-    idxSet = idxs[i]
-    inputs = [frames[idx_].cuda().unsqueeze(0) for idx_ in idxSet]
-    with torch.no_grad():
-        outputFrame = model(inputs)   
-    outputFrame = [of.squeeze(0).cpu().data for of in outputFrame]
-    outputs.extend(outputFrame)
-    outputs.append(inputs[2].squeeze(0).cpu().data)
-
-new_video = [make_image(im_) for im_ in outputs]
-
-# 中間のAVIファイルのパスを作成
-temp_output = args.output_video_path.replace(".mp4", ".avi")  # 出力パスからAVIの一時ファイルを作成
-
-# AVIフォーマットで書き出す
-write_video_cv2(new_video, temp_output, args.output_fps, (resizes[1], resizes[0]))
-
-# 最終的なMP4出力
-print("Writing to", args.output_video_path)
-os.system(f'ffmpeg -hide_banner -loglevel warning -i "{temp_output}" "{args.output_video_path}"')
-
-# 一時的なAVIファイルを削除
-os.remove(temp_output)
-"""
