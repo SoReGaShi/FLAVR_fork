@@ -126,7 +126,6 @@ def video_transform(videoTensor , downscale=1):
     return videoTensor , resizes
 
 
-
 if args.is_folder:
     videoTensor = files_to_videoTensor(input_video , args.downscale)
 else:
